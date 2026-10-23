@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexusEvents — Real-Time Event Registration System</title>
+  <meta name="description" content="Discover, create, and register for world-class events with real-time capacity tracking powered by Django and MongoDB.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #090D16;
+      --bg-surface: #111726;
+      --bg-surface-elevated: #182238;
+      --bg-card: rgba(19, 27, 46, 0.75);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 102, 241, 0.5);
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --primary: #6366F1;
+      --primary-hover: #4F46E5;
+      --primary-gradient: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%);
+      --accent-emerald: #10B981;
+      --accent-amber: #F59E0B;
+      --accent-rose: #F43F5E;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      --shadow-glow: 0 0 35px rgba(99, 102, 241, 0.25);
+      --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    h1, h2, h3, h4, h5, .brand-logo {
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    /* Ambient background glowing orbs */
+    .ambient-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .orb-1 {
+      position: absolute;
+      top: -150px;
+      left: 15%;
+      width: 550px;
+      height: 550px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, rgba(99, 102, 241, 0) 70%);
+      filter: blur(60px);
+    }
+    .orb-2 {
+      position: absolute;
+      top: 400px;
+      right: -100px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(217, 70, 239, 0.12) 0%, rgba(217, 70, 239, 0) 70%);
+      filter: blur(80px);
+    }
+
+    /* Top Navigation */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(9, 13, 22, 0.85);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .nav-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0.9rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: var(--primary-gradient);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+    .brand-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #FFFFFF 30%, #A5B4FC 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .db-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34D399;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .db-pulse {
+      width: 7px;
+      height: 7px;
+      background: #10B981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10B981;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .btn:active {
+      transform: scale(0.97);
+    }
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: #FFFFFF;
+      box-shadow: 0 4px 18px rgba(99, 102, 241, 0.35);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
+      filter: brightness(1.1);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-primary);
+      border-color: var(--border-subtle);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .btn-emerald {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .btn-emerald:hover {
+      background: rgba(16, 185, 129, 0.25);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+    .btn-ghost:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .btn-sm {
+      padding: 0.45rem 0.85rem;
+      font-size: 0.8rem;
+    }
+
+    /* Main Container */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto 3rem;
+      padding: 1rem 0;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 1rem;
+      border-radius: 9999px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #A5B4FC;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 {
+      font-size: clamp(2.3rem, 5vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+    }
+    .gradient-text {
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      color: var(--text-secondary);
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      max-width: 650px;
+      margin: 0 auto 2rem;
+    }
+
+    /* Search & Filter Toolbar */
+    .toolbar-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow-card);
+    }
+    .search-box {
+      flex: 1 1 320px;
+      position: relative;
+    }
+    .search-box svg {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.85rem;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: var(--transition);
+    }
+    .search-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+      background: rgba(15, 23, 42, 0.85);
+    }
+    .filters-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+    .filter-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      padding: 0.55rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .filter-chip:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+    }
+    .filter-chip.active {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: #C7D2FE;
+    }
+
+    /* Section Tabs */
+    .tabs-nav {
+      display: flex;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 2rem;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      font-weight: 700;
+      padding: 0.75rem 0.5rem;
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition);
+      font-family: 'Outfit', sans-serif;
+    }
+    .tab-btn.active {
+      color: #FFFFFF;
+    }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--primary-gradient);
+      border-radius: 3px 3px 0 0;
+    }
+    .tab-badge {
+      display: inline-block;
+      margin-left: 0.4rem;
+      background: rgba(99, 102, 241, 0.2);
+      color: #A5B4FC;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* Event Cards Grid */
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1.75rem;
+    }
+    @media (max-width: 640px) {
+      .events-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .event-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 1.65rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+    .event-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary-gradient);
+      opacity: 0;
+      transition: var(--transition);
+    }
+    .event-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(99, 102, 241, 0.35);
+      box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.6), 0 0 25px rgba(99, 102, 241, 0.15);
+    }
+    .event-card:hover::before {
+      opacity: 1;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.1rem;
+    }
+    .date-badge {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 0.45rem 0.75rem;
+      text-align: center;
+      min-width: 60px;
+    }
+    .date-month {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #A5B4FC;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .date-day {
+      font-size: 1.25rem;
+      font-weight: 800;
+      line-height: 1.1;
+      color: #FFFFFF;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .status-badge.open {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34D399;
+    }
+    .status-badge.almost {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #FBBF24;
+    }
+    .status-badge.full {
+      background: rgba(244, 63, 94, 0.12);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      color: #FB7185;
+    }
+    .status-badge.past {
+      background: rgba(148, 163, 184, 0.1);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: #94A3B8;
+    }
+
+    .event-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 0.5rem;
+      line-height: 1.35;
+    }
+    .event-desc {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.55;
+      margin-bottom: 1.25rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .meta-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.35rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .meta-item svg {
+      color: #818CF8;
+      flex-shrink: 0;
+    }
+
+    /* Capacity Progress Bar */
+    .capacity-bar-wrap {
+      margin-bottom: 1.25rem;
+    }
+    .capacity-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+    .capacity-track {
+      height: 7px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+    .capacity-fill {
+      height: 100%;
+      border-radius: 9999px;
+      background: var(--primary-gradient);
+      transition: width 0.4s ease;
+    }
+    .capacity-fill.danger {
+      background: linear-gradient(90deg, #F59E0B, #F43F5E);
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* Registrations List */
+    .reg-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .reg-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      transition: var(--transition);
+    }
+    .reg-item:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-2px);
+    }
+    .reg-info h4 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 0.25rem;
+    }
+    .reg-meta {
+      display: flex;
+      gap: 1rem;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+    }
+
+    /* Empty States */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 1.5rem;
+      background: rgba(19, 27, 46, 0.4);
+      border: 1px dashed var(--border-subtle);
+      border-radius: var(--radius-xl);
+      margin: 1.5rem 0;
+    }
+    .empty-icon {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 1.25rem;
+      background: rgba(99, 102, 241, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #818CF8;
+    }
+
+    /* Modal / Dialog */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-card {
+      background: #131B2E;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 520px;
+      padding: 2rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 35px rgba(99, 102, 241, 0.2);
+      transform: scale(0.95);
+      transition: transform 0.25s ease;
+    }
+    .modal-overlay.active .modal-card {
+      transform: scale(1);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .modal-header h3 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.5rem;
+      line-height: 1;
+      padding: 0.25rem;
+      transition: var(--transition);
+    }
+    .close-btn:hover {
+      color: #FFFFFF;
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+    }
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: var(--transition);
+    }
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 480px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Toast notification */
+    #toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      background: #182238;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-left: 4px solid var(--primary);
+      color: var(--text-primary);
+      padding: 0.9rem 1.25rem;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      min-width: 280px;
+      max-width: 420px;
+      animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast.success { border-left-color: var(--accent-emerald); }
+    .toast.error { border-left-color: var(--accent-rose); }
+    .toast.warning { border-left-color: var(--accent-amber); }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #FFFFFF;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-bg">
+    <div class="orb-1"></div>
+    <div class="orb-2"></div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="nav-container">
+      <a href="#" class="brand-wrap">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+            <path d="M13 5v2"/>
+            <path d="M13 17v2"/>
+            <path d="M13 11v2"/>
+          </svg>
+        </div>
+        <div>
+          <span class="brand-title">NexusEvents</span>
+        </div>
+      </a>
+
+      <div class="db-pill" title="Live Database Status">
+        <span class="db-pulse"></span>
+        <span>MongoDB Connected</span>
+      </div>
+
+      <div class="nav-actions">
+        <div id="unauth-actions" style="display: flex; gap: 0.5rem; align-items: center;">
+          <button class="btn btn-secondary btn-sm" id="btn-quick-admin">⚡ Demo Admin</button>
+          <button class="btn btn-ghost btn-sm" id="btn-open-login">Sign In</button>
+          <button class="btn btn-primary btn-sm" id="btn-open-register">Sign Up</button>
+        </div>
+
+        <div id="auth-actions" style="display: none; align-items: center; gap: 0.75rem;">
+          <button class="btn btn-primary btn-sm" id="btn-open-create-event">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Create Event
+          </button>
+          <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.06); padding: 0.35rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div style="width: 24px; height: 24px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800;">👤</div>
+            <span id="user-display" style="font-size: 0.85rem; font-weight: 600;">admin</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="btn-logout">Logout</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Hero Banner -->
+    <section class="hero">
+      <div class="hero-badge">
+        <span>✨ Powered by Django REST Framework & MongoDB</span>
+      </div>
+      <h1>Experience & Register for <span class="gradient-text">Extraordinary Events</span></h1>
+      <p>Seamlessly discover events, reserve guaranteed seats with concurrency validation, and organize your own conferences in real time.</p>
+    </section>
+
+    <!-- Toolbar: Search & Filters -->
+    <section class="toolbar-card">
+      <div class="search-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="search-input" class="search-input" placeholder="Search events by title or location...">
+      </div>
+
+      <div class="filters-wrap">
+        <button class="filter-chip active" id="filter-all">All Events</button>
+        <button class="filter-chip" id="filter-upcoming">⚡ Upcoming Only</button>
+        <button class="btn btn-secondary btn-sm" id="btn-refresh" title="Reload live events">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          Refresh
+        </button>
+      </div>
+    </section>
+
+    <!-- Section Tabs -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" id="tab-events">
+        🌟 Available Events
+        <span class="tab-badge" id="events-count-badge">0</span>
+      </button>
+      <button class="tab-btn" id="tab-registrations">
+        🎟️ My Registrations
+        <span class="tab-badge" id="reg-count-badge">0</span>
+      </button>
+    </div>
+
+    <!-- Events Tab Panel -->
+    <div id="panel-events">
+      <div class="events-grid" id="events-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Registrations Tab Panel -->
+    <div id="panel-registrations" style="display: none;">
+      <div id="registrations-container" class="reg-list">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Login Modal -->
+  <div class="modal-overlay" id="modal-login">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Sign In to NexusEvents</h3>
+        <button class="close-btn" data-close>&times;</button>
+      </div>
+      <form id="form-login">
+        <div class="form-group">
+          <label class="form-label" for="login-username">Username</label>
+          <input type="text" id="login-username" class="form-input" placeholder="e.g. admin" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+        </div>
+        <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary" style="flex: 1;" id="btn-submit-login">Sign In</button>
+          <button type="button" class="btn btn-secondary" id="btn-fill-admin">Fill Demo Credentials</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Register Modal -->
+  <div class="modal-overlay" id="modal-register">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Create an Account</h3>
+        <button class="close-btn" data-close>&times;</button>
+      </div>
+      <form id="form-register">
+        <div class="form-group">
+          <label class="form-label" for="reg-username">Username</label>
+          <input type="text" id="reg-username" class="form-input" placeholder="Choose a username" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-email">Email Address</label>
+          <input type="email" id="reg-email" class="form-input" placeholder="you@example.com" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="reg-password">Password</label>
+            <input type="password" id="reg-password" class="form-input" placeholder="Min 8 characters" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-password-confirm">Confirm Password</label>
+            <input type="password" id="reg-password-confirm" class="form-input" placeholder="Confirm password" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.25rem;" id="btn-submit-register">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Event Modal -->
+  <div class="modal-overlay" id="modal-create-event">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Host a New Event</h3>
+        <button class="close-btn" data-close>&times;</button>
+      </div>
+      <form id="form-create-event">
+        <div class="form-group">
+          <label class="form-label" for="ev-title">Event Title</label>
+          <input type="text" id="ev-title" class="form-input" placeholder="e.g. AI & Cloud Architecture Summit 2026" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="ev-desc">Description</label>
+          <textarea id="ev-desc" class="form-textarea" rows="3" placeholder="Brief outline of the event, agenda, and speakers..." required></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="ev-location">Location / Venue</label>
+          <input type="text" id="ev-location" class="form-input" placeholder="e.g. Convention Center, Hall B or Online Zoom" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="ev-datetime">Date & Time</label>
+            <input type="datetime-local" id="ev-datetime" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ev-capacity">Total Capacity</label>
+            <input type="number" id="ev-capacity" class="form-input" min="1" max="10000" value="50" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.25rem;" id="btn-submit-event">Publish Event</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <script>
+    // Configuration
+    const API_BASE = window.location.origin.includes('http') ? window.location.origin + '/api' : 'http://127.0.0.1:8000/api';
+
+    // State Management
+    let state = {
+      token: localStorage.getItem('nexus_access_token') || null,
+      username: localStorage.getItem('nexus_username') || null,
+      events: [],
+      myRegistrations: [],
+      isUpcomingOnly: false,
+      searchQuery: ''
+    };
+
+    // DOM Elements
+    const elements = {
+      unauthActions: document.getElementById('unauth-actions'),
+      authActions: document.getElementById('auth-actions'),
+      userDisplay: document.getElementById('user-display'),
+      eventsContainer: document.getElementById('events-container'),
+      registrationsContainer: document.getElementById('registrations-container'),
+      eventsCountBadge: document.getElementById('events-count-badge'),
+      regCountBadge: document.getElementById('reg-count-badge'),
+      searchInput: document.getElementById('search-input'),
+      filterAll: document.getElementById('filter-all'),
+      filterUpcoming: document.getElementById('filter-upcoming'),
+      tabEvents: document.getElementById('tab-events'),
+      tabRegistrations: document.getElementById('tab-registrations'),
+      panelEvents: document.getElementById('panel-events'),
+      panelRegistrations: document.getElementById('panel-registrations'),
+      modalLogin: document.getElementById('modal-login'),
+      modalRegister: document.getElementById('modal-register'),
+      modalCreateEvent: document.getElementById('modal-create-event'),
+      toastContainer: document.getElementById('toast-container')
+    };
+
+    // Initialize
+    function init() {
+      updateAuthUI();
+      fetchEvents();
+      if (state.token) {
+        fetchRegistrations();
+      }
+      setupEventListeners();
+
+      // Pre-set default datetime to tomorrow at 10 AM
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 7);
+      tomorrow.setHours(10, 0, 0, 0);
+      const localIso = new Date(tomorrow.getTime() - (tomorrow.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+      document.getElementById('ev-datetime').value = localIso;
+    }
+
+    // Toast Notifications
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+      toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+      elements.toastContainer.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Auth Headers Helper
+    function getAuthHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      if (state.token) {
+        headers['Authorization'] = `Bearer ${state.token}`;
+      }
+      return headers;
+    }
+
+    // Update UI based on auth status
+    function updateAuthUI() {
+      if (state.token && state.username) {
+        elements.unauthActions.style.display = 'none';
+        elements.authActions.style.display = 'flex';
+        elements.userDisplay.textContent = state.username;
+      } else {
+        elements.unauthActions.style.display = 'flex';
+        elements.authActions.style.display = 'none';
+      }
+    }
+
+    // Fetch Events API
+    async function fetchEvents() {
+      try {
+        let url = `${API_BASE}/events/?`;
+        if (state.isUpcomingOnly) url += 'upcoming=true&';
+        if (state.searchQuery) url += `search=${encodeURIComponent(state.searchQuery)}&`;
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to fetch events');
+        const data = await res.json();
+        state.events = data.results || [];
+        elements.eventsCountBadge.textContent = state.events.length;
+        renderEvents();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Fetch Registrations API
+    async function fetchRegistrations() {
+      if (!state.token) return;
+      try {
+        const res = await fetch(`${API_BASE}/registrations/`, {
+          headers: getAuthHeaders()
+        });
+        if (!res.ok) throw new Error('Failed to load registrations');
+        const data = await res.json();
+        state.myRegistrations = data.results || [];
+        elements.regCountBadge.textContent = state.myRegistrations.filter(r => r.status === 'confirmed').length;
+        renderRegistrations();
+        renderEvents(); // Re-render events to show registered status
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Render Events Grid
+    function renderEvents() {
+      if (state.events.length === 0) {
+        elements.eventsContainer.innerHTML = `
+          <div class="empty-state" style="grid-column: 1 / -1;">
+            <div class="empty-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+            </div>
+            <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">No Events Found</h3>
+            <p style="color: var(--text-secondary); max-width: 450px; margin: 0 auto 1.5rem;">
+              ${state.searchQuery ? 'Try clearing your search terms or filter.' : 'Be the first organizer to publish an event on NexusEvents!'}
+            </p>
+            ${state.token ? '<button class="btn btn-primary btn-sm" onclick="openModal(elements.modalCreateEvent)">Create an Event</button>' : ''}
+          </div>
+        `;
+        return;
+      }
+
+      const registeredEventIds = new Set(
+        state.myRegistrations
+          .filter(r => r.status === 'confirmed')
+          .map(r => typeof r.event === 'object' ? r.event.id : r.event)
+      );
+
+      elements.eventsContainer.innerHTML = state.events.map(ev => {
+        const evDate = new Date(ev.date_time);
+        const month = evDate.toLocaleString('en-US', { month: 'short' });
+        const day = evDate.getDate();
+        const timeStr = evDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const dateFormatted = `${evDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${timeStr}`;
+
+        const isPast = evDate < new Date();
+        const seatsLeft = ev.seats_left !== undefined ? ev.seats_left : ev.capacity;
+        const isFull = seatsLeft <= 0;
+        const isRegistered = registeredEventIds.has(ev.id);
+
+        let statusClass = 'open';
+        let statusLabel = `${seatsLeft} Seats Open`;
+        if (isPast) {
+          statusClass = 'past';
+          statusLabel = 'Event Ended';
+        } else if (isFull) {
+          statusClass = 'full';
+          statusLabel = 'Sold Out';
+        } else if (seatsLeft <= 5) {
+          statusClass = 'almost';
+          statusLabel = 'Almost Full';
+        }
+
+        const pctUsed = Math.min(100, Math.round(((ev.capacity - seatsLeft) / ev.capacity) * 100));
+
+        return `
+          <div class="event-card" id="event-card-${ev.id}">
+            <div>
+              <div class="card-top">
+                <div class="date-badge">
+                  <div class="date-month">${month}</div>
+                  <div class="date-day">${day}</div>
+                </div>
+                <span class="status-badge ${statusClass}">${statusLabel}</span>
+              </div>
+
+              <h3 class="event-title">${escapeHtml(ev.title)}</h3>
+              <p class="event-desc">${escapeHtml(ev.description)}</p>
+
+              <div class="meta-list">
+                <div class="meta-item">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  <span>${dateFormatted}</span>
+                </div>
+                <div class="meta-item">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  <span>${escapeHtml(ev.location)}</span>
+                </div>
+                <div class="meta-item">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  <span>Organized by <strong>${escapeHtml(ev.created_by_username || 'Staff')}</strong></span>
+                </div>
+              </div>
+
+              <div class="capacity-bar-wrap">
+                <div class="capacity-labels">
+                  <span style="color: var(--text-secondary);">Availability</span>
+                  <span style="color: ${isFull ? '#FB7185' : '#34D399'}; font-weight: 700;">${seatsLeft} / ${ev.capacity} left</span>
+                </div>
+                <div class="capacity-track">
+                  <div class="capacity-fill ${pctUsed > 80 ? 'danger' : ''}" style="width: ${pctUsed}%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              ${isRegistered ? `
+                <button class="btn btn-emerald btn-sm" style="width: 100%; cursor: default;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  You're Registered!
+                </button>
+              ` : isPast ? `
+                <button class="btn btn-secondary btn-sm" style="width: 100%; opacity: 0.6;" disabled>Event Passed</button>
+              ` : isFull ? `
+                <button class="btn btn-secondary btn-sm" style="width: 100%; opacity: 0.6;" disabled>Capacity Full</button>
+              ` : `
+                <button class="btn btn-primary btn-sm" style="width: 100%;" onclick="registerForEvent('${ev.id}')" id="btn-reg-${ev.id}">
+                  <span>Reserve Seat</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Registrations
+    function renderRegistrations() {
+      if (!state.token) {
+        elements.registrationsContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🔒</div>
+            <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Sign In Required</h3>
+            <p style="color: var(--text-secondary); max-width: 450px; margin: 0 auto 1.5rem;">Please log in to manage your active registrations and tickets.</p>
+            <button class="btn btn-primary btn-sm" onclick="openModal(elements.modalLogin)">Sign In</button>
+          </div>
+        `;
+        return;
+      }
+
+      if (state.myRegistrations.length === 0) {
+        elements.registrationsContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🎟️</div>
+            <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">No Registrations Yet</h3>
+            <p style="color: var(--text-secondary); max-width: 450px; margin: 0 auto 1.5rem;">You haven't reserved seats for any events yet. Browse our events and join one!</p>
+            <button class="btn btn-primary btn-sm" onclick="switchTab('events')">Browse Events</button>
+          </div>
+        `;
+        return;
+      }
+
+      elements.registrationsContainer.innerHTML = state.myRegistrations.map(reg => {
+        const isConfirmed = reg.status === 'confirmed';
+        const ev = reg.event_detail || {};
+        const regDate = new Date(reg.registered_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const evDate = ev.date_time ? new Date(ev.date_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Date TBA';
+
+        return `
+          <div class="reg-item">
+            <div class="reg-info">
+              <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.35rem;">
+                <h4>${escapeHtml(reg.event_title || ev.title || 'Event Registration')}</h4>
+                <span class="status-badge ${isConfirmed ? 'open' : 'past'}">${isConfirmed ? 'Confirmed' : 'Cancelled'}</span>
+              </div>
+              <div class="reg-meta">
+                <span>📅 Event: <strong>${evDate}</strong></span>
+                <span>📍 Location: <strong>${escapeHtml(ev.location || 'TBA')}</strong></span>
+                <span>🕒 Booked on: ${regDate}</span>
+              </div>
+            </div>
+
+            <div>
+              ${isConfirmed ? `
+                <button class="btn btn-secondary btn-sm" style="color: #FB7185; border-color: rgba(244, 63, 94, 0.3);" onclick="cancelRegistration('${reg.id}')">
+                  Cancel Booking
+                </button>
+              ` : `
+                <button class="btn btn-primary btn-sm" onclick="reRegister('${typeof reg.event === 'object' ? reg.event.id : reg.event}')">
+                  Re-Register
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Register for Event API
+    async function registerForEvent(eventId) {
+      if (!state.token) {
+        showToast('Please sign in or use Demo Admin to register for events.', 'warning');
+        openModal(elements.modalLogin);
+        return;
+      }
+
+      const btn = document.getElementById(`btn-reg-${eventId}`);
+      if (btn) btn.innerHTML = '<span class="spinner"></span>';
+
+      try {
+        const res = await fetch(`${API_BASE}/events/${eventId}/register/`, {
+          method: 'POST',
+          headers: getAuthHeaders()
+        });
+        const data = await res.json();
+
+        if (res.status === 201) {
+          showToast(data.detail || 'Seat successfully reserved!', 'success');
+          await fetchRegistrations();
+          await fetchEvents();
+        } else if (res.status === 409) {
+          showToast(data.detail || 'You are already registered for this event.', 'warning');
+          await fetchRegistrations();
+        } else {
+          showToast(data.detail || 'Registration failed.', 'error');
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        if (btn) renderEvents();
+      }
+    }
+
+    // Cancel Registration API
+    async function cancelRegistration(registrationId) {
+      if (!confirm('Are you sure you want to cancel this registration? Your seat will be freed immediately.')) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/registrations/${registrationId}/cancel/`, {
+          method: 'POST',
+          headers: getAuthHeaders()
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast('Registration cancelled. Seat freed successfully.', 'success');
+          await fetchRegistrations();
+          await fetchEvents();
+        } else {
+          showToast(data.detail || 'Cancellation failed', 'error');
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Re-register API
+    async function reRegister(eventId) {
+      await registerForEvent(eventId);
+    }
+
+    // Login API
+    async function handleLogin(username, password) {
+      try {
+        const res = await fetch(`${API_BASE}/auth/login/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.access) {
+          state.token = data.access;
+          state.username = username;
+          localStorage.setItem('nexus_access_token', data.access);
+          localStorage.setItem('nexus_username', username);
+          updateAuthUI();
+          closeModals();
+          showToast(`Welcome back, ${username}!`, 'success');
+          await fetchRegistrations();
+          await fetchEvents();
+        } else {
+          showToast(data.detail || 'Invalid username or password.', 'error');
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Register User API
+    async function handleRegister(username, email, password, password_confirm) {
+      try {
+        const res = await fetch(`${API_BASE}/auth/register/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password, password_confirm })
+        });
+        const data = await res.json();
+
+        if (res.status === 201) {
+          showToast('Account created successfully! Logging you in...', 'success');
+          closeModals();
+          await handleLogin(username, password);
+        } else {
+          const errMsg = Object.entries(data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join(' | ');
+          showToast(errMsg || 'Registration failed.', 'error');
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Create Event API
+    async function handleCreateEvent(eventData) {
+      try {
+        const res = await fetch(`${API_BASE}/events/create/`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(eventData)
+        });
+        const data = await res.json();
+
+        if (res.status === 201) {
+          showToast('Event created successfully!', 'success');
+          closeModals();
+          document.getElementById('form-create-event').reset();
+          await fetchEvents();
+        } else {
+          const errMsg = Object.entries(data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join(' | ');
+          showToast(errMsg || 'Failed to create event.', 'error');
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Logout
+    function handleLogout() {
+      state.token = null;
+      state.username = null;
+      state.myRegistrations = [];
+      localStorage.removeItem('nexus_access_token');
+      localStorage.removeItem('nexus_username');
+      updateAuthUI();
+      elements.regCountBadge.textContent = '0';
+      renderEvents();
+      switchTab('events');
+      showToast('Logged out successfully.', 'info');
+    }
+
+    // Modal Helpers
+    function openModal(modal) {
+      closeModals();
+      modal.classList.add('active');
+    }
+    function closeModals() {
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+    }
+
+    // Tabs switch
+    function switchTab(tab) {
+      if (tab === 'events') {
+        elements.tabEvents.classList.add('active');
+        elements.tabRegistrations.classList.remove('active');
+        elements.panelEvents.style.display = 'block';
+        elements.panelRegistrations.style.display = 'none';
+      } else {
+        elements.tabRegistrations.classList.add('active');
+        elements.tabEvents.classList.remove('active');
+        elements.panelRegistrations.style.display = 'block';
+        elements.panelEvents.style.display = 'none';
+        if (state.token) fetchRegistrations();
+      }
+    }
+
+    // Event Listeners
+    function setupEventListeners() {
+      // Modals close buttons
+      document.querySelectorAll('[data-close]').forEach(btn => {
+        btn.addEventListener('click', closeModals);
+      });
+      document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', e => {
+          if (e.target === overlay) closeModals();
+        });
+      });
+
+      // Quick Demo Admin Login
+      document.getElementById('btn-quick-admin').addEventListener('click', () => {
+        handleLogin('admin', 'admin123');
+      });
+
+      // Open Modals
+      document.getElementById('btn-open-login').addEventListener('click', () => openModal(elements.modalLogin));
+      document.getElementById('btn-open-register').addEventListener('click', () => openModal(elements.modalRegister));
+      document.getElementById('btn-open-create-event').addEventListener('click', () => openModal(elements.modalCreateEvent));
+      document.getElementById('btn-logout').addEventListener('click', handleLogout);
+
+      // Fill admin helper
+      document.getElementById('btn-fill-admin').addEventListener('click', () => {
+        document.getElementById('login-username').value = 'admin';
+        document.getElementById('login-password').value = 'admin123';
+      });
+
+      // Forms
+      document.getElementById('form-login').addEventListener('submit', e => {
+        e.preventDefault();
+        const u = document.getElementById('login-username').value.trim();
+        const p = document.getElementById('login-password').value;
+        handleLogin(u, p);
+      });
+
+      document.getElementById('form-register').addEventListener('submit', e => {
+        e.preventDefault();
+        const u = document.getElementById('reg-username').value.trim();
+        const em = document.getElementById('reg-email').value.trim();
+        const p = document.getElementById('reg-password').value;
+        const pc = document.getElementById('reg-password-confirm').value;
+        if (p !== pc) {
+          showToast('Passwords do not match.', 'error');
+          return;
+        }
+        handleRegister(u, em, p, pc);
+      });
+
+      document.getElementById('form-create-event').addEventListener('submit', e => {
+        e.preventDefault();
+        const title = document.getElementById('ev-title').value.trim();
+        const description = document.getElementById('ev-desc').value.trim();
+        const location = document.getElementById('ev-location').value.trim();
+        const date_time = new Date(document.getElementById('ev-datetime').value).toISOString();
+        const capacity = parseInt(document.getElementById('ev-capacity').value, 10);
+        handleCreateEvent({ title, description, location, date_time, capacity });
+      });
+
+      // Search input debounced
+      let debounceTimer;
+      elements.searchInput.addEventListener('input', e => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          state.searchQuery = e.target.value.trim();
+          fetchEvents();
+        }, 300);
+      });
+
+      // Filters
+      elements.filterAll.addEventListener('click', () => {
+        state.isUpcomingOnly = false;
+        elements.filterAll.classList.add('active');
+        elements.filterUpcoming.classList.remove('active');
+        fetchEvents();
+      });
+
+      elements.filterUpcoming.addEventListener('click', () => {
+        state.isUpcomingOnly = true;
+        elements.filterUpcoming.classList.add('active');
+        elements.filterAll.classList.remove('active');
+        fetchEvents();
+      });
+
+      document.getElementById('btn-refresh').addEventListener('click', () => {
+        fetchEvents();
+        if (state.token) fetchRegistrations();
+        showToast('Events updated.', 'info');
+      });
+
+      // Tabs
+      elements.tabEvents.addEventListener('click', () => switchTab('events'));
+      elements.tabRegistrations.addEventListener('click', () => switchTab('registrations'));
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Run
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
